@@ -26,13 +26,23 @@
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
 ## Project setup
+# QuickSend Backend
 
-```bash
-$ npm install
-```
+## Installation
+npm install
+
+## Prisma
+npx prisma generate
+npx prisma db push
+
+## Run
+npm run start:dev
 
 ## Compile and run the project
-
+git clone https://github.com/tonrepo.git
+npm install
+npx prisma generate
+npm run start:dev
 ```bash
 # development
 $ npm run start
