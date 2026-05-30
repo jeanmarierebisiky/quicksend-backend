@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ===================== USERS
+//
+
+model User {
+  id        Int    @id @default(autoincrement())
+  name      String
+  login     String @unique
+  password  String
+  role      String
+
+  transactions Transaction[]
+  invoices     Invoice[]
+  auditLogs    AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+//
+// ===================== CUSTOMERS
+//
+
+model Customer {
+  id        Int    @id @default(autoincrement())
+  name      String
+  firstname String
+  phone     String
+  email     String?
+  login     String @unique
+  password  String
+
+  shippingMarks ShippingMark[]
+  invoices      Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("customers")
+}
+
+//
+// ===================== SHIPPING TYPE
+//
+
+model ShippingType {
+  id    Int    @id @default(autoincrement())
+  code  String @unique
+  label String
+
+  parcels      Parcel[]
+  invoiceItems InvoiceItem[]
+  prices       Price[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("shipping_type")
+}
+
+//
+// ===================== SHIPPING MARK
+//
+
+model ShippingMark {
+  id Int @id @default(autoincrement())
+
+  code String @unique
+
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  parcels Parcel[]
+
+  isDeleted Boolean @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("shipping_mark")
+}
+
+//
+// ===================== PARCEL STATUS
+//
+
+model ParcelStatus {
+  id    Int    @id @default(autoincrement())
+  code  String @unique
+  label String
+
+  parcels  Parcel[]
+  packages Package[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("parcel_status")
+}
+
+//
+// ===================== PARCELS
+//
+
+model Parcel {
+  id             Int    @id @default(autoincrement())
+  trackingNumber String @unique
+
+  weight Decimal @db.Decimal(10, 2)
+
+  shippingMarkId Int
+  statusId       Int
+  shippingTypeId Int
+
+  shippingMark ShippingMark @relation(fields: [shippingMarkId], references: [id])
+  status       ParcelStatus @relation(fields: [statusId], references: [id])
+  shippingType ShippingType @relation(fields: [shippingTypeId], references: [id])
+
+  description String?
+
+  dateExp   DateTime?
+  dateArriv DateTime?
+
+  invoiceItems InvoiceItem[]
+  packages     Package[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("parcels")
+}
+
+//
+// ===================== TRANSACTION TYPES
+//
+
+model TransactionType {
+  id    Int    @id @default(autoincrement())
+  code  String @unique
+  label String
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("transaction_types")
+}
+
+//
+// ===================== TRANSACTION NATURE
+//
+
+model TransactionNature {
+  id    Int    @id @default(autoincrement())
+  code  String @unique
+  label String
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("transaction_natures")
+}
+
+//
+// ===================== TRANSACTIONS
+//
+
+model Transaction {
+  id Int @id @default(autoincrement())
+
+  transactionTypeId   Int
+  transactionNatureId  Int
+  userId              Int
+
+  transactionType   TransactionType   @relation(fields: [transactionTypeId], references: [id])
+  transactionNature TransactionNature @relation(fields: [transactionNatureId], references: [id])
+  user              User              @relation(fields: [userId], references: [id])
+
+  amount      Decimal @db.Decimal(10, 2)
+  reference   String
+  description String?
+
+  transactionDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("transactions")
+}
+
+//
+// ===================== INVOICE STATUS
+//
+
+model InvoiceStatus {
+  id    Int    @id @default(autoincrement())
+  code  String @unique
+  label String
+
+  invoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice_status")
+}
+
+//
+// ===================== PAYMENT METHOD
+//
+
+model PaymentMethod {
+  id    Int    @id @default(autoincrement())
+  code  String @unique
+  label String
+
+  invoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_method")
+}
+
+//
+// ===================== INVOICES
+//
+
+model Invoice {
+  id Int @id @default(autoincrement())
+
+  invoiceNumber String @unique
+
+  invoiceDate DateTime
+
+  customerId Int
+  statusId Int
+  paymentMethodId Int
+  createdById Int
+
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  status        InvoiceStatus @relation(fields: [statusId], references: [id])
+  paymentMethod PaymentMethod  @relation(fields: [paymentMethodId], references: [id])
+  createdBy     User           @relation(fields: [createdById], references: [id])
+
+  discountAmount Decimal @default(0) @db.Decimal(10, 2)
+  extraFee       Decimal @default(0) @db.Decimal(10, 2)
+
+  receverName    String
+  receverContact String
+
+  paymentReference String?
+
+  invoiceItems InvoiceItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice")
+}
+
+//
+// ===================== INVOICE ITEMS
+//
+
+model InvoiceItem {
+  id Int @id @default(autoincrement())
+
+  invoiceId Int
+  parcelId  Int
+  shippingTypeId Int
+
+  invoice      Invoice      @relation(fields: [invoiceId], references: [id])
+  parcel       Parcel       @relation(fields: [parcelId], references: [id])
+  shippingType ShippingType @relation(fields: [shippingTypeId], references: [id])
+
+  trackingNumber String
+  boxName        String?
+
+  price Decimal @db.Decimal(10, 2)
+
+  packageType String?
+
+  weightKg Decimal @db.Decimal(10, 2)
+
+  packingWeightKg Decimal?
+  packingWeightPercentage Decimal?
+
+  billableWeightKg Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice_items")
+}
+
+//
+// ===================== AUDIT LOGS
+//
+
+model AuditLog {
+  id Int @id @default(autoincrement())
+
+  userId Int?
+
+  user User? @relation(fields: [userId], references: [id])
+
+  entityType String
+  entityId   String
+  action      String
+  description String?
+
+  metadata Json?
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+//
+// ===================== PACKAGE
+//
+
+model Package {
+  id Int @id @default(autoincrement())
+
+  parcelId Int
+  statusId Int
+
+  parcel Parcel @relation(fields: [parcelId], references: [id])
+  status ParcelStatus @relation(fields: [statusId], references: [id])
+
+  shippingType String
+  weight Decimal @db.Decimal(10, 2)
+
+  nomBox String?
+
+  dateExp DateTime?
+  dateArriv DateTime?
+
+  motifReturn String?
+  packageType String?
+
+  packingWeightKg Decimal?
+  packingWeightPercentage Decimal?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("package")
+}
+
+//
+// ===================== PRICE
+//
+
+model Price {
+  id Int @id @default(autoincrement())
+
+  label String
+
+  shippingTypeId Int
+  shippingType ShippingType @relation(fields: [shippingTypeId], references: [id])
+
+  amount Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("price")
+}
