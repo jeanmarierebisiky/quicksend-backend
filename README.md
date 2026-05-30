@@ -39,13 +39,13 @@ npx prisma db push
 npm run start:dev
 
 ## Compile and run the project
-git clone https://github.com/jeanmarierebisiky/quicksend-backend/
-npm install
-npx prisma generate
-npm run start:dev
+
 ```bash
 # development
+$ git clone https://github.com/jeanmarierebisiky/quicksend-backend/
 $ npm run start
+$ npx prisma generate
+$ npm run start:dev
 
 # watch mode
 $ npm run start:dev
