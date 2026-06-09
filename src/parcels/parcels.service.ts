@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateParcelDto } from './dto/create-parcel.dto';
 import { UpdateParcelDto } from './dto/update-parcel.dto';
@@ -35,20 +32,14 @@ export class ParcelsService {
   }
 
   // ================= FIND ALL (pagination + filter)
-  findAll(params: {
-    page: number;
-    limit: number;
-    statusId?: number;
-  }) {
+  findAll(params: { page: number; limit: number; statusId?: number }) {
     const { page, limit, statusId } = params;
 
     return this.prisma.parcel.findMany({
       skip: (page - 1) * limit,
       take: limit,
 
-      where: statusId
-        ? { statusId }
-        : undefined,
+      where: statusId ? { statusId } : undefined,
 
       include: {
         shippingMark: {
@@ -71,7 +62,7 @@ export class ParcelsService {
   async findOne(id: number) {
     const parcel =
       await this.prisma.parcel.findUnique({
-        where: { id },
+      where: { id },
 
         include: {
           shippingMark: {
